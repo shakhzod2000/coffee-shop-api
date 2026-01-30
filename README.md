@@ -32,19 +32,18 @@ FastAPI-based user management system with authentication, authorization, and ema
 git clone <repository-url>
 cd coffee-shop-api
 
-# Copy environment variables
-cp .env.example .env
-
-# Start all services
+# Start all services (no additional configuration needed)
 docker-compose up --build
 ```
 
-The API will be available at `http://localhost:8000`
+The API will be available at `http://localhost:8001`
+
+> **Note**: Port 8001 is used by default. If you need different ports, edit `docker-compose.yml`.
 
 ### API Documentation
 
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
+- Swagger UI: `http://localhost:8001/docs`
+- ReDoc: `http://localhost:8001/redoc`
 
 ## API Endpoints
 
@@ -75,7 +74,7 @@ app/
 ├── config.py            # Configuration and settings
 ├── database.py          # Async database connection
 ├── models/              # SQLAlchemy models
-├── schemas/             # Pydantic schemas
+├── schemas/             # Pydantic schemas (request/response validation)
 ├── api/
 │   ├── deps.py          # Dependencies (auth, DB session)
 │   └── routes/          # API route handlers
@@ -89,9 +88,25 @@ celery_app/
 └── tasks.py             # Background tasks (user cleanup)
 ```
 
-## Environment Variables
+### Architecture Overview
 
-See `.env.example` for all available configuration options.
+- **Models** define database structure (SQLAlchemy ORM)
+- **Schemas** validate requests and format responses (Pydantic)
+- **Services** contain business logic, separate from route handlers
+- **Routes** handle HTTP requests, delegate to services
+- **Core** contains reusable utilities (security, roles)
+
+## Configuration
+
+All configuration is handled via environment variables in `docker-compose.yml`:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | Set in docker-compose |
+| `SECRET_KEY` | JWT signing key | Change in production! |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token lifetime | 15 |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | Refresh token lifetime | 7 |
+| `REDIS_URL` | Redis connection for Celery | Set in docker-compose |
 
 ## Automatic User Cleanup
 
@@ -100,16 +115,10 @@ The task runs every hour and removes users where:
 - `is_verified = false`
 - `created_at < (now - 2 days)`
 
-## Development Notes
+## Simplifications Made
 
-### Simplifications Made
-
-1. **Email Verification**: Verification codes are printed to console instead of being sent via email/SMS. 
+1. **Email Verification**: Verification codes are printed to console instead of being sent via email/SMS.
    In production, this would integrate with an email service (SendGrid, AWS SES) or SMS provider (Twilio).
 
-2. **Token Storage**: Refresh tokens are not stored server-side. 
+2. **Token Storage**: Refresh tokens are not stored server-side.
    In production, you might want to store them in Redis for revocation capability.
-
-## License
-
-MIT

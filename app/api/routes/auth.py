@@ -164,6 +164,7 @@ async def refresh_token(
         )
     
     # Generate new tokens
+    # Rotate refresh token as well for security
     access_token = create_access_token(data={"sub": str(user.id)})
     new_refresh_token = create_refresh_token(data={"sub": str(user.id)})
     
